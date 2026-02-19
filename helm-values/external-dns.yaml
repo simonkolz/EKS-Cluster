@@ -1,0 +1,15 @@
+provider: aws
+
+env:
+  - name: AWS_DEFAULT_REGION
+    value: eu-west-2
+
+serviceAccount:
+  create: true
+  name: external-dns
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    eks.amazonaws.com/role-arn: "arn:aws:iam::727330373282:role/external-dns"
+
+domainFilter:
+  - kolz.link
