@@ -10,56 +10,30 @@ This project provisions a production-grade Kubernetes cluster (EKS) on AWS using
 - **Cert-Manager:** Automates the management and issuance of TLS/SSL certificates within Kubernetes, integrated with ACME for automated renewals.
 - **ExternalDNS:** Dynamically manages DNS records in AWS Route 53 based on Kubernetes resources, automating DNS record creation and updates.
 
-## 🏗️ Architecture
+## Why This Setup Matters
+
+- **GitOps with ArgoCD:** Ensures consistent, version-controlled deployments through automated Git synchronization.
+- **Scalable Infrastructure:** Utilizes EKS for auto-scaling and high availability.
+- **Secure Communication:** Implements TLS/SSL for encrypted traffic with Cert-Manager.
+- **Automated DNS Management:** ExternalDNS reduces manual effort by automating DNS configurations
 
 All infrastructure and Kubernetes add-ons are provisioned via Terraform.
 
-**Infrastructure Layer (AWS)**
+### 1. Configure AWS Credentials
+```bash
+aws configure
+```
+This command is used to set up your AWS credentials and default settings so you can interact with AWS services from your terminal.
 
-Provisioned using Terraform:
 
-VPC (Multi-AZ)
 
-Public subnets
-
-Private subnets
-
-NAT Gateway
-
-Internet Gateway
-
-EKS Cluster
-
-Managed Node Group
-
-IAM Roles
-
-OIDC Provider (for IRSA)
-
-KMS encryption for secrets
-
-Security Groups
-
-Route53 Hosted Zone (if applicable)
-Kubernetes provider
-
-Helm provider
-
-Helm releases
-
-ArgoCD installation
-
-DNS + SSL automation components
-
-No manual helm install commands were used.
-
-### 2. Provision EKS Cluster with Terraform
+### 2. Automate EKS Cluster and Helm Charts with Terraform
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
-This command initializes Terraform, previews the infrastructure changes, and deploys the EKS cluster along with networking components.
+This command initializes Terraform, previews the infrastructure changes, and deploys the EKS cluster and Helm Charts along with networking components.
 
 ### 3. Configure kubectl
 ```bash
