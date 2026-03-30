@@ -1,3 +1,4 @@
+
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
   repository = "https://kubernetes.github.io/ingress-nginx"
@@ -41,7 +42,7 @@ resource "helm_release" "cert_manager" {
   values = [
     file("./helm-values/cert-manager.yaml")
   ]
-
+  depends_on = [module.eks, module.cert_manager_irsa_role]
 }
 
 resource "helm_release" "external_dns" {
@@ -55,7 +56,7 @@ resource "helm_release" "external_dns" {
   namespace        = "external-dns"
   replace          = true
 
-  depends_on = [module.external_dns_irsa_role]
+  depends_on = [module.eks, module.external_dns_irsa_role]
 
   values = [
     file("./helm-values/external-dns.yaml")
@@ -77,5 +78,5 @@ resource "helm_release" "argocd_deploy" {
     file("./helm-values/argocd.yaml")
   ]
 
-  depends_on = [helm_release.nginx_ingress, helm_release.cert_manager, helm_release.external_dns]
+  depends_on = [module.eks, helm_release.nginx_ingress, helm_release.cert_manager, helm_release.external_dns]
 }
