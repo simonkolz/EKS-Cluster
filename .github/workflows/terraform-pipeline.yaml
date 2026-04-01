@@ -2,7 +2,7 @@ name: Terraform CICD
 'on':
   push:
     branches:
-      - master
+      - ["main"]
     paths:
       - terraform/**
 jobs:
