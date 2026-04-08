@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: the-app-hub
-          image: 727330373282.dkr.ecr.eu-west-2.amazonaws.com/url-app-hub:latest
+          image: moabukar/the-app-hub:22e0324
           ports:
             - containerPort: 3000
 ---
