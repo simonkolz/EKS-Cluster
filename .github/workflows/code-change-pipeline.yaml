@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - ".github/workflows/code-change-pipeline"
+      - ".github/workflows/code-change-pipeline.yaml"
 
 permissions:
   contents: write
