@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: the-app-hub
-          image: 727330373282.dkr.ecr.eu-west-2.amazonaws.com/url-app-hub:22e0324
+          image: moabukar/the-app-hub:22e0324
           ports:
             - containerPort: 3000
 ---
@@ -40,15 +40,15 @@ metadata:
   name: the-app-hub
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    external-dns.alpha.kubernetes.io/hostname: "the-app-hub.kolz.link"
+    external-dns.alpha.kubernetes.io/hostname: "eks.kolz.link"
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - the-app-hub.kolz.link
+        - eks.kolz.link
       secretName: the-app-hub-tls
   rules:
-    - host: the-app-hub.kolz.link
+    - host: eks.kolz.link
       http:
         paths:
           - path: /
