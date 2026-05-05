@@ -80,3 +80,24 @@ resource "helm_release" "argocd_deploy" {
 
   depends_on = [module.eks, helm_release.nginx_ingress, helm_release.cert_manager, helm_release.external_dns]
 }
+
+resource "helm_release" "prometheus" {
+  name             = "prometheus"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  version          = "55.5.0"
+
+  namespace        = "monitoring"
+  create_namespace = true
+
+  values = [
+    file("./helm-values/prometheus-values.yaml")
+  ]
+
+  set_sensitive {
+    name  = "grafana.adminPassword"
+    value = var.grafana_admin_password
+  }
+
+  depends_on = [module.eks, helm_release.nginx_ingress, helm_release.cert_manager, helm_release.external_dns, helm_release.argocd_deploy]
+}
