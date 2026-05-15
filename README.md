@@ -1,7 +1,8 @@
-# EKS Cluster Deployment with ArgoCD, Helm Charts, Cert-Manager, and ExternalDNS
+# EKS Cluster App Hub Deployment
 
 ## Overview
-This project provisions a production-grade Kubernetes cluster (EKS) on AWS using Terraform and deploys all platform components declaratively using Terraform-managed Helm releases.
+This project is a production-grade application hub deployment on AWS EKS. The deployment spans three availability zones for high availability and uses EKS Managed Node Groups for scalability. Infrastructure is automated using Terraform, and the application is containerised using Docker and stored in Amazon ECR.
+<img width="1434" height="869" alt="Screenshot 2026-05-15 at 15 14 13" src="https://github.com/user-attachments/assets/a209b623-be3b-4136-88eb-aeb57d74d07a" />
 
 ## Architecture
 <img width="911" height="639" alt="Screenshot 2026-05-15 at 12 44 42" src="https://github.com/user-attachments/assets/fcf764a3-e9ed-464b-abd3-2052e03b5585" />
@@ -70,16 +71,9 @@ This project provisions a production-grade Kubernetes cluster (EKS) on AWS using
 
 
 ## CI/CD Pipeline
-<img width="1920" height="1080" alt="Screenshot (448)" src="https://github.com/user-attachments/assets/fc275682-35f9-4c5b-a9dd-8b53b193e0a0" />
+<img width="1434" height="467" alt="Screenshot 2026-05-15 at 15 16 29" src="https://github.com/user-attachments/assets/b71f215c-86de-4c8b-b685-898f652a5309" />
+<img width="1439" height="459" alt="Screenshot 2026-05-15 at 15 17 08" src="https://github.com/user-attachments/assets/4f4c18dd-3bd9-481b-92bf-3975c53011aa" />
 
-### GitHub Actions Workflow for changes in /app folder
-
-1. Triggered on push to `main` branch
-2. Builds Docker image with commit SHA as tag
-3. Pushes image to Amazon ECR
-4. Updates `k8s/deployment.yml` with new image tag
-5. Commits changes back to repository
-6. ArgoCD detects changes and deploys automatically
 
 
 ## Terraform CI/CD Workflow
@@ -94,7 +88,7 @@ This project provisions a production-grade Kubernetes cluster (EKS) on AWS using
 - Uses GitHub Secrets to securely inject the Grafana admin password during deployment
 
 
-## Application CI/CD Workflow
+## Docker Build and Deploy CI/CD Workflow
 
 - Runs automatically after the `Terraform CICD` workflow completes successfully
 - Checks out the latest repository code
