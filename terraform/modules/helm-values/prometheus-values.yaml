@@ -1,8 +1,6 @@
 grafana:
   enabled: true
-
   adminUser: admin
-  adminPassword: "ChangeMe123!"
 
   service:
     type: ClusterIP
@@ -10,29 +8,17 @@ grafana:
   ingress:
     enabled: true
     ingressClassName: nginx
-
     hosts:
       - grafana.kolz.link
-
     path: /
     pathType: Prefix
-
     annotations:
       nginx.ingress.kubernetes.io/ssl-redirect: "false"
 
 prometheus:
+  enabled: true
   prometheusSpec:
     retention: 15d
-
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: gp3
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 20Gi
 
     resources:
       requests:
@@ -42,17 +28,6 @@ prometheus:
 
 alertmanager:
   enabled: true
-
-  alertmanagerSpec:
-    storage:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: gp3
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 5Gi
 
 kube-state-metrics:
   enabled: true
