@@ -3,29 +3,174 @@
 ## Overview
 This project provisions a production-grade Kubernetes cluster (EKS) on AWS using Terraform and deploys all platform components declaratively using Terraform-managed Helm releases.
 
+## Architecture
+<img width="911" height="639" alt="Screenshot 2026-05-15 at 12 44 42" src="https://github.com/user-attachments/assets/fcf764a3-e9ed-464b-abd3-2052e03b5585" />
+
 ## Key Features
-- **Amazon EKS:** Managed Kubernetes service for running containerized applications at scale with high availability, security, and seamless AWS integration.
-- **ArgoCD:** Declarative GitOps continuous delivery tool for Kubernetes, enabling automatic application deployment from Git repositories.
-- **Helm Charts:** Simplifies the deployment and management of complex Kubernetes applications using reusable, version-controlled charts.
-- **Cert-Manager:** Automates the management and issuance of TLS/SSL certificates within Kubernetes, integrated with ACME for automated renewals.
-- **ExternalDNS:** Dynamically manages DNS records in AWS Route 53 based on Kubernetes resources, automating DNS record creation and updates.
 
-## Why This Setup Matters
+- **ExternalDNS**: Automatically updates DNS records in Route 53
+- **Cert-Manager**: Provides automated SSL/TLS certificate management via Let's Encrypt
+- **NGINX Ingress Controller**: Routes external traffic to services within the cluster and the service forwards to pods on port 8080
+- **ArgoCD**: GitOps-based continuous deployment to update kubernetes manifests
+- **Prometheus/Grafana**: Collects cluster metrics and visualises them in dashboards
+- **IRSA (IAM Roles for Service Accounts)**: Uses temporary credentials via OIDC, eliminating the need for long-lived access keys
 
-- **GitOps with ArgoCD:** Ensures consistent, version-controlled deployments through automated Git synchronization.
-- **Scalable Infrastructure:** Utilizes EKS for auto-scaling and high availability.
-- **Secure Communication:** Implements TLS/SSL for encrypted traffic with Cert-Manager.
-- **Automated DNS Management:** ExternalDNS reduces manual effort by automating DNS configurations
 
-All infrastructure and Kubernetes add-ons are provisioned via Terraform.
+## Directory Structure
 
-### 1. Configure AWS Credentials
-```bash
-aws configure
 ```
-This command is used to set up your AWS credentials and default settings so you can interact with AWS services from your terminal.
+├── .github
+│   └── workflows
+│       ├── code-change-pipeline.yml
+│       └── terraform-pipeline.yml
+├── apps
+│   └── app-hub.yaml
+├── argocd
+│   └── application.yaml
+├── cert-man
+│   └── issuer.yaml
+└── terraform
+│    └── modules
+│        ├── ecr.tf
+│        ├── eks.tf
+│        ├── helm-values
+│        │   ├── argocd.yaml
+│        │   ├── cert-manager.yaml
+│        │   ├── external-dns.yaml
+│        │   └── prometheus-values.yaml
+│        ├── helm.tf
+│        ├── irsa.tf
+│        ├── locals.tf
+│        ├── providers.tf
+│        ├── terraform.tfvars
+│        ├── variables.tf
+│        └── vpc.tf
+```
 
 
+## Infrastructure Components
+
+### AWS Services
+
+- **EKS Cluster**: Kubernetes with 3 worker nodes across 3 AZs
+- **VPC**: VPC with public and private subnets
+- **Route 53**: DNS management for eks.mahindevopslab.com
+- **ECR**: Private container registry
+- **IAM**: IRSA roles for ExternalDNS and CertManager
+- **STATE MANAGEMENT**: remote state stored in S3 and statelocking enabled via Dynamodb
+
+### Kubernetes Components
+
+- **Application**: FastAPI devops tools (2 replicas)
+- **NGINX Ingress**: LoadBalancer Service creating AWS ALB
+- **ExternalDNS**: Automated DNS record management
+- **CertManager**: Automated SSL certificate issuance and renewal
+- **ArgoCD**: GitOps continuous deployment
+- **Prometheus/Grafana**: Monitoring and observability
+
+
+## CI/CD Pipeline
+<img width="1920" height="1080" alt="Screenshot (448)" src="https://github.com/user-attachments/assets/fc275682-35f9-4c5b-a9dd-8b53b193e0a0" />
+
+### GitHub Actions Workflow for changes in /app folder
+
+1. Triggered on push to `main` branch
+2. Builds Docker image with commit SHA as tag
+3. Pushes image to Amazon ECR
+4. Updates `k8s/deployment.yml` with new image tag
+5. Commits changes back to repository
+6. ArgoCD detects changes and deploys automatically
+
+
+## Terraform CI/CD Workflow
+
+- Triggers automatically when changes are pushed to the `main` branch inside the `terraform/` directory
+- Checks out the latest repository code
+- Configures AWS credentials securely using GitHub Secrets
+- Runs a Checkov security scan to detect Terraform misconfigurations and security issues
+- Initializes Terraform modules and providers using `terraform init`
+- Generates an execution plan with `terraform plan`
+- Deploys infrastructure changes automatically using `terraform apply`
+- Uses GitHub Secrets to securely inject the Grafana admin password during deployment
+
+
+## Application CI/CD Workflow
+
+- Runs automatically after the `Terraform CICD` workflow completes successfully
+- Checks out the latest repository code
+- Configures AWS credentials securely using GitHub Secrets
+- Logs into Amazon ECR (Elastic Container Registry)
+- Pulls the Docker image from Docker Hub
+- Tags the image for the target Amazon ECR repository
+- Pushes the Docker image to the ECR repository
+- Uses environment variables to manage AWS region, repository name, and image version
+- Ensures application deployment only runs if the infrastructure deployment succeeds
+
+**Security checks include:**
+
+- IAM policy least privilege validation
+- Encryption at rest configurations
+- Network security group rules
+- Public accessibility checks
+
+### Security
+
+- **OIDC Authentication**: GitHub Actions authenticates to AWS without long-lived credentials
+- **Trivy Scans**: Docker images scanned for vulnerabilities before deployment
+- **Non-root Container**: Application runs as non-root user
+- **Private Subnets**: Worker nodes isolated in private subnets
+
+ ## GitOps with ArgoCD##
+
+<img width="1434" height="856" alt="Screenshot 2026-03-04 at 15 48 41" src="https://github.com/user-attachments/assets/cee9d1cd-a18c-4cb2-9634-6a375f8b345b" />
+
+## Monitoring
+<img width="1416" height="823" alt="Screenshot 2026-05-05 at 19 11 07" src="https://github.com/user-attachments/assets/f2aa7278-8c3b-4de0-989b-ee3aebdca557" />
+
+
+### Prometheus
+
+- Scrapes metrics from all cluster components every 15 seconds
+- Monitors pod CPU, memory, network, and application metrics
+
+### Grafana
+
+- Visualises Prometheus data through pre-built dashboards
+- Provides real-time insights into cluster health
+- Accessible via port-forward: `kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80`
+
+## DNS & SSL Automation
+
+### ExternalDNS
+
+- Watches Ingress resources for hostname annotations
+- Creates A records in Route 53 automatically thorough IRSA access
+- Updates records when LoadBalancer address changes
+
+### CertManager
+
+- Automatically requests SSL certificates from Let's Encrypt
+- Uses DNS-01 challenge via Route 53
+- Renews certificates before expiry
+- Stores certificates in Kubernetes Secrets
+
+## Deployment
+
+### Prerequisites
+
+- AWS CLI configured
+- kubectl installed
+- Terraform installed
+- Helm installed
+
+### 1. Deploy Infrastructure
+
+```bash
+cd terraform/modules
+terraform init
+terraform apply
+
+```
 
 ### 2. Automate EKS Cluster with Terraform
 ```bash
@@ -39,8 +184,6 @@ This command initializes Terraform, previews the infrastructure changes, and dep
 ```bash
 aws eks --region <region> update-kubeconfig --name <cluster-name>
 ```
-This command is used to connect your local machine’s kubectl to your EKS cluster.
-
 ### 4.  Deply Helm Charts to deploy tools like cert-manager, NGINX Ingress Controller and externalDNS with Terraform
 
 Create your NGINX Ingress Controller, Cert-manager and ExternalDNS with the following:
